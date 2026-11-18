@@ -1,0 +1,111 @@
+/*
+ * TuniShop - Plateforme vue 360 (version HTML)
+ * streamlit.css : reproduction du cadre Streamlit 1.67 (menu latéral, colonnes, champs, cartes, alertes)
+ * avec le thème de .streamlit/config.toml. Les valeurs viennent des styles calculés de la version Streamlit.
+ * Comme dans Streamlit, tout est en rem : baseFontSize = 15 donne 1 rem = 15 px.
+ * Les styles propres à la plateforme sont dans ts.css.
+ * Auteure : Sarra Abdeljaouad
+ */
+:root {
+  /* config.toml [theme] */
+  --primaire: #0F4C5C;                       /* primaryColor */
+  --primaire-10: rgba(15, 76, 92, .1);
+  --lien: #0F4C5C;                           /* linkColor */
+  --fond: #FFFFFF;                           /* backgroundColor */
+  --fond-2: #F4F6F9;                         /* secondaryBackgroundColor */
+  --texte: #1F2A37;                          /* textColor */
+  --texte-80: rgba(31, 42, 55, .8);
+  --texte-60: rgba(31, 42, 55, .6);
+  --bord: #E3E8EE;                           /* borderColor */
+  --rayon: 12px;                             /* baseRadius */
+  --rayon-bouton: 10px;                      /* buttonRadius */
+  --police: Inter, "Segoe UI", system-ui, sans-serif;   /* font */
+  /* config.toml [theme.sidebar] */
+  --menu-fond: #F4F6F9;
+  --menu-fond-2: #FFFFFF;
+  --menu: 18.75rem;
+}
+* {box-sizing: border-box;}
+html {font-size: 15px;}                      /* baseFontSize */
+body {margin: 0; padding: 0; font-family: var(--police); font-size: 1rem; line-height: 1.6; color: var(--texte);
+  background: var(--fond);}
+b, strong {font-weight: 600;}
+mark {color: inherit;}
+.st-main a {color: var(--lien);}
+
+/* ---- menu latéral ---------------------------------------------------- */
+.st-menu {position: fixed; inset: 0 auto 0 0; width: var(--menu); background: var(--menu-fond);
+  border-right: 1px solid var(--bord); padding: 0 1.25rem 6rem; overflow-y: auto; z-index: 20;   /* showSidebarBorder */
+  scrollbar-width: thin; scrollbar-color: transparent transparent;}
+.st-menu:hover {scrollbar-color: rgba(31, 42, 55, .25) transparent;}   /* barre fine, visible au survol, comme Streamlit */
+.st-menu-entete {height: 3.75rem; margin: 0 .7rem 1rem; display: flex; align-items: center;}
+.st-menu-entete img {height: 2rem; display: block;}
+nav {display: flex; flex-direction: column;}   /* marges des liens non fusionnées, comme dans Streamlit */
+.st-nav-section {font-size: .875rem; font-weight: 500; color: var(--texte-80); line-height: 1.5;
+  margin: 1rem .7rem .2rem; padding-right: .5rem;}
+.st-nav-section:first-child {margin-top: 0;}
+.st-nav-lien {display: flex; align-items: center; gap: .5rem; height: 1.75rem; margin: .19rem .7rem; padding: 0 .5rem;
+  border-radius: 9px; color: var(--texte-80); text-decoration: none; font-size: 1rem; line-height: 2rem;}
+.st-nav-lien:hover {background: rgba(153, 173, 194, .15);}
+.st-nav-lien.actif {background: rgba(153, 173, 194, .25); color: var(--texte); font-weight: 600;}
+.st-nav-lien img {width: 1rem; height: 1rem; opacity: .6; flex: none;}
+.st-nav-lien.actif img {opacity: .9;}
+.st-nav-sep {margin: 0 .7rem; padding-top: 1rem; border-bottom: 1px solid var(--bord);}
+.st-menu-corps {margin: 0 .7rem; padding-top: 1.5rem; display: flex; flex-direction: column; gap: 1rem;}
+.st-menu-corps .st-espace {height: 9px;}     /* st.markdown("<br>") du menu Streamlit */
+
+/* ---- zone principale ------------------------------------------------- */
+.st-main {margin-left: var(--menu); min-height: 100vh;}
+/* 2,2 rem (ts.css) + 1 rem : dans Streamlit, la feuille de style occupe le 1er emplacement de la page */
+.st-main .block-container {margin: 0 auto; padding: 3.2rem 5rem 10rem;}
+.st-pile {display: flex; flex-direction: column; gap: 1rem; min-width: 0;}
+.st-colonnes {display: grid; gap: 1rem; align-items: start; min-width: 0;}
+.st-colonnes.centre {align-items: center;}
+.st-colonnes.moyen {gap: 2rem;}
+.st-colonnes > * {min-width: 0;}
+
+/* bloc de texte (st.markdown) : Streamlit lui donne une marge basse de -1 rem */
+.st-md {margin-bottom: -1rem;}
+
+/* carte (st.container(border=True)) */
+.st-carte {border: 1px solid var(--bord); border-radius: var(--rayon); padding: calc(1rem - 1px);
+  display: flex; flex-direction: column; gap: 1rem;}
+
+/* champ texte (st.text_input) */
+.st-champ {display: flex; align-items: center; height: 2.5rem; border: 1px solid var(--bord); border-radius: var(--rayon);
+  background: var(--fond-2); margin: 0;}
+.st-champ:focus-within {border-color: var(--primaire);}
+.st-champ input {flex: 1; min-width: 0; height: 100%; border: 0; outline: 0; background: transparent;
+  font: inherit; font-size: .875rem; line-height: 1.4; color: var(--texte); padding: .5rem .5rem .5rem .75rem;}
+.st-champ input::placeholder {color: var(--texte-60);}
+.st-menu .st-champ {background: var(--menu-fond-2);}
+
+/* contrôle segmenté (st.segmented_control) */
+.st-segments {display: inline-flex; flex-wrap: wrap;}
+.st-segments button {font: inherit; font-size: .875rem; line-height: 1.6; height: 2rem; padding: .25rem 1rem;
+  background: var(--fond); color: var(--texte); border: 1px solid var(--bord); margin-right: -1px; cursor: pointer;}
+.st-segments button:first-child {border-radius: var(--rayon-bouton) 0 0 var(--rayon-bouton);}
+.st-segments button:last-child {border-radius: 0 var(--rayon-bouton) var(--rayon-bouton) 0; margin-right: 0;}
+.st-segments button:only-child {border-radius: var(--rayon-bouton);}
+.st-segments button:hover {color: var(--primaire); border-color: var(--primaire); position: relative;}
+.st-segments button.actif {color: var(--primaire); background: var(--primaire-10); border-color: var(--primaire);
+  position: relative; z-index: 1;}
+
+/* légende (st.caption) et alerte (st.info, blueColor du thème) */
+.st-legende {font-size: .875rem; color: var(--texte-60); margin: 0;}
+.st-info {background: rgba(31, 78, 121, .1); color: rgb(16, 39, 61); border-radius: var(--rayon); padding: 1rem;
+  margin: 0; line-height: 1.5;}
+.st-chargement {color: var(--texte-60); font-size: .875rem;}
+
+/* ---- petits écrans : menu escamotable -------------------------------- */
+.st-bouton-menu {display: none;}
+@media (max-width: 768px) {
+  .st-menu {transform: translateX(-100%); transition: transform .2s;}
+  body.menu-ouvert .st-menu {transform: none; box-shadow: 0 0 24px rgba(0, 0, 0, .15);}
+  .st-main {margin-left: 0;}
+  .st-main .block-container {padding: 4.2rem 1rem 6rem;}
+  .st-colonnes {grid-template-columns: 1fr !important;}
+  .st-bouton-menu {display: flex; position: fixed; top: .8rem; left: .8rem; z-index: 30; width: 2.6rem; height: 2.6rem;
+    align-items: center; justify-content: center; border: 1px solid var(--bord); border-radius: var(--rayon-bouton);
+    background: var(--fond); color: var(--texte); cursor: pointer; font-size: 1.3rem;}
+}

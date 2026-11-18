@@ -1,0 +1,66 @@
+/* =============================================================================
+   TuniShop · Vue 360 : compléments à tunishop-theme.css (version HTML)
+   Uniquement ce que la charte ne couvre pas encore, avec ses propres jetons (variables).
+   Rien ici ne redéfinit une couleur ou une forme de la charte.
+   Auteure : Sarra Abdeljaouad
+   ============================================================================= */
+
+/* Menu : titre, recherche et pied (maquette) */
+.ts-menu-titre {display: flex; align-items: center; gap: .6rem; margin: 0 .3rem .6rem; font-size: 1.25rem; font-weight: 700;
+  color: var(--ts-texte); text-decoration: none;}
+.ts-menu-titre img {width: 1.9rem; height: 1.9rem;}
+.ts-menu form {margin: 0 0 .4rem;}
+.ts-menu-lien .ic {width: 1.25rem; text-align: center; flex: none;}
+.ts-menu-pied .ts-statut {margin-bottom: 0;}
+
+/* Pile verticale et colonnes (équivalents de st.columns) */
+.ts-pile {display: flex; flex-direction: column; gap: 1rem; min-width: 0;}
+.ts-grille > * {min-width: 0;}
+.ts-grille.centre {align-items: center;}
+.ts-grille.haut {align-items: start;}
+.ts-carte {display: flex; flex-direction: column; gap: .75rem; min-width: 0;}
+.ts-carte > .ts-carte-titre {margin-bottom: 0;}
+
+/* Légende grise (st.caption) */
+.ts-legende {font-size: .85rem; color: var(--ts-gris); margin: 0; line-height: 1.5;}
+
+/* Messages (st.info, st.error) : couleurs de sens de la charte */
+.ts-message {margin: 0; padding: .85rem 1rem; border-radius: var(--ts-rayon); line-height: 1.5;}
+.ts-message.info {background: var(--ts-bleu-fond); color: var(--ts-bleu);}
+.ts-message.erreur {background: var(--ts-rouge-fond); color: var(--ts-rouge);}
+
+/* Lien simple vers une page (st.page_link) */
+.ts-lien-page {align-self: flex-start; color: var(--ts-fonce); font-weight: 600;}
+
+/* Volet repliable (st.expander) */
+.ts-volet {border: 1px solid var(--ts-bord); border-radius: var(--ts-rayon-carte); background: var(--ts-fond);}
+.ts-volet summary {list-style: none; cursor: pointer; padding: .8rem 1.3rem; font-weight: 650; display: flex; gap: .6rem;
+  align-items: center; border-radius: var(--ts-rayon-carte);}
+.ts-volet summary::-webkit-details-marker {display: none;}
+.ts-volet summary::before {content: "›"; font-size: 1.3rem; line-height: 1; color: var(--ts-gris); transition: transform .15s;}
+.ts-volet[open] summary::before {transform: rotate(90deg);}
+.ts-volet summary:hover {background: var(--ts-fond-2);}
+.ts-volet[open] summary {border-bottom: 1px solid var(--ts-bord-leger); border-radius: var(--ts-rayon-carte) var(--ts-rayon-carte) 0 0;}
+.ts-volet-corps {padding: 1.1rem 1.3rem;}
+
+/* Tableaux larges : défilement dans la carte plutôt que débordement */
+.ts-defile {overflow-x: auto;}
+
+/* Graphiques */
+.ts-graphique {width: 100%;}
+
+/* Chargement */
+.ts-chargement {color: var(--ts-gris); font-size: .9rem;}
+
+/* Recherche : le champ principal occupe toute sa colonne */
+.ts-recherche-ligne form {margin: 0;}
+
+/* Écrans étroits : la charte met le menu en haut ; les grilles passent sur une colonne */
+@media (max-width: 820px) {
+  .ts-grille {grid-template-columns: 1fr !important;}
+}
+
+/* Message de succès (st.success) et panneaux d'onglets (st.tabs) */
+.ts-message.succes {background: var(--ts-vert-fond); color: var(--ts-vert);}
+.ts-panneau[hidden] {display: none;}
+.ts-panneau {display: flex; flex-direction: column; gap: .75rem;}
