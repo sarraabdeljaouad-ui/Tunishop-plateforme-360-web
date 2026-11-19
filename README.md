@@ -2,7 +2,7 @@
 
 Auteure : Sarra Abdeljaouad · Étape 9 du projet TuniShop, version 2 de la plateforme
 
-> **Site en ligne : [LIEN À COMPLÉTER APRÈS PUBLICATION]**
+> **Site en ligne : [sarraabdeljaouad-ui.github.io/Tunishop-plateforme-360-web](https://sarraabdeljaouad-ui.github.io/Tunishop-plateforme-360-web/)**
 >
 > **Version Streamlit : [tunishopsarraapps.streamlit.app](https://tunishopsarraapps.streamlit.app)** · code : [sarraabdeljaouad-ui/tunishop-plateforme-360](https://github.com/sarraabdeljaouad-ui/tunishop-plateforme-360) (v0.13.3)
 
