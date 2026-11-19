@@ -12,6 +12,14 @@ import asyncio, json, sys
 from pathlib import Path
 from playwright.async_api import async_playwright
 
+
+async def lancer(p):
+    """Chromium de Playwright s'il est installé, sinon le Chrome du poste."""
+    try:
+        return await p.chromium.launch()
+    except Exception:
+        return await p.chromium.launch(channel="chrome")
+
 SITE = sys.argv[1] if len(sys.argv) > 1 else "http://localhost:8600/"
 resultats = []
 
@@ -23,7 +31,7 @@ def noter(cas, attendu, obtenu, ok):
 
 async def main():
     async with async_playwright() as p:
-        nav = await p.chromium.launch()
+        nav = await lancer(p)
         pg = await nav.new_page(viewport={"width": 1440, "height": 900})
         erreurs = []
         pg.on("pageerror", lambda e: erreurs.append(str(e)))

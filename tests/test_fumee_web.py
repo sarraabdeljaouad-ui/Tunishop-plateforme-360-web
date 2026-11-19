@@ -14,6 +14,14 @@ from datetime import datetime
 from pathlib import Path
 from playwright.async_api import async_playwright
 
+
+async def lancer(p):
+    """Chromium de Playwright s'il est installé, sinon le Chrome du poste."""
+    try:
+        return await p.chromium.launch()
+    except Exception:
+        return await p.chromium.launch(channel="chrome")
+
 SITE = sys.argv[1] if len(sys.argv) > 1 else "http://localhost:8600/"
 CAS = [  # page, cas, identifiant, texte attendu
     ("index.html", "accueil", "", "Bonjour, que cherches-tu ?"),
@@ -39,7 +47,7 @@ CAS = [  # page, cas, identifiant, texte attendu
 async def main():
     lignes, ok = [], 0
     async with async_playwright() as p:
-        nav = await p.chromium.launch()
+        nav = await lancer(p)
         for page, cas, ident, attendu in CAS:
             pg = await nav.new_page(viewport={"width": 1440, "height": 900})
             erreurs = []
