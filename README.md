@@ -2,6 +2,8 @@
 
 Auteure : Sarra Abdeljaouad · Étape 9 du projet TuniShop, version 2 de la plateforme
 
+> **Projet complet** (du staging à l'automatisation : DWH, cubes SSAS, Power BI, ML) : [tunishop-projet-data-bi](https://github.com/sarraabdeljaouad-ui/tunishop-projet-data-bi)
+> 
 > **Site en ligne : [sarraabdeljaouad-ui.github.io/Tunishop-plateforme-360-web](https://sarraabdeljaouad-ui.github.io/Tunishop-plateforme-360-web/)**
 >
 > **Version Streamlit : [tunishopsarraapps.streamlit.app](https://tunishopsarraapps.streamlit.app)** · code : [sarraabdeljaouad-ui/tunishop-plateforme-360](https://github.com/sarraabdeljaouad-ui/tunishop-plateforme-360) (v0.13.3)
