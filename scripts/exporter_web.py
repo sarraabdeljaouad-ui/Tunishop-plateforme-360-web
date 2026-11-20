@@ -51,9 +51,15 @@ OBJETS = [
     "app.v_produit_identite", "app.v_produit_kpi", "app.v_produit_stock_mois", "app.v_produit_ventes_mois",
     "ctl.v_derniere_execution",
     "pbi.v_dm_regles", "pbi.v_eda_vue_ensemble", "pbi.v_ml_modeles", "pbi.v_ml_registre", "pbi.v_ml_retard",
-    "pbi.v_ml_scores_churn", "pbi.v_ml_scores_demande", "pbi.v_ml_scores_retard", "pbi.v_ml_suivi", "pbi.v_ml_ventes",
+    "pbi.v_ml_scores_churn", "pbi.v_ml_scores_demande", "pbi.v_ml_scores_retard", "pbi.v_ml_suivi",
+    "pbi.v_ml_suivi_historique", "pbi.v_ml_ventes",
     "pbi.v_tm_avis", "pbi.v_tm_avis_themes", "pbi.v_tm_produits", "pbi.v_tm_verification_faits",
 ]
+# Objets apparus après la version 1.0.0 : s'ils manquent (export Streamlit plus ancien), une vue vide les remplace.
+OPTIONNELS = {
+    "pbi.v_ml_suivi_historique": "SELECT CAST(NULL AS DATE) AS date_donnees, CAST(NULL AS VARCHAR) AS cas, "
+                                 "CAST(NULL AS VARCHAR) AS statut WHERE FALSE",       # étape 7 v1.5
+}
 
 
 # ---------------------------------------------------------------------------
@@ -70,7 +76,10 @@ def connexion(source: Path) -> duckdb.DuckDBPyConnection:
     for objet in OBJETS:
         f = source / f"{objet}.parquet"
         if not f.exists():
-            manquants.append(objet)
+            if objet in OPTIONNELS:
+                con.execute(f"CREATE VIEW {objet} AS {OPTIONNELS[objet]}")
+            else:
+                manquants.append(objet)
             continue
         chemin = str(f).replace("'", "''")
         con.execute(f"CREATE VIEW {objet} AS SELECT * FROM read_parquet('{chemin}')")
@@ -607,7 +616,7 @@ def bloc_voix(con) -> dict:
 # Modèles (data/modeles.json) et Vérification (data/manifeste.json, écrit à la fin)
 # ---------------------------------------------------------------------------
 def bloc_modeles(con) -> dict:
-    """donnees.ml_modeles, ml_registre, ml_suivi et importance_churn(8)."""
+    """donnees.ml_modeles, ml_registre, ml_suivi, ml_suivi_historique et importance_churn(8)."""
     return {
         "modeles": table(lire(con, "SELECT cas, modele, role, mesure, sens, valeur_validation, valeur_test, "
                                    "gain_vs_reference, retenu FROM pbi.v_ml_modeles")),
@@ -615,6 +624,10 @@ def bloc_modeles(con) -> dict:
                                               nb_variables, seuil, source, notes
                                        FROM pbi.v_ml_registre ORDER BY cas, appris_le DESC, nom""")),
         "suivi": table(lire(con, "SELECT cas, objet, periode, indicateur, valeur, seuil, statut FROM pbi.v_ml_suivi")),
+        "historique": table(lire(con, """SELECT CAST(date_donnees AS VARCHAR) AS date_donnees, cas, COUNT(*) AS indicateurs,
+                                                CAST(SUM(CASE WHEN statut = 'ALERTE' THEN 1 ELSE 0 END) AS INTEGER) AS alertes
+                                         FROM pbi.v_ml_suivi_historique
+                                         GROUP BY date_donnees, cas ORDER BY date_donnees, cas""")),
         "importance": table(lire(con, "SELECT cle AS variable, perte_AUC AS perte_auc FROM ana.ml03_importance "
                                       "ORDER BY perte_AUC DESC LIMIT 8")),
     }

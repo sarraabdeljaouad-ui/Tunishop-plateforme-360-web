@@ -9,7 +9,8 @@
  */
 import { demarrer } from "../app.js";
 import { modeles as donneesModeles } from "../donnees.js";
-import { nombre, pct, vide } from "../format.js";
+import { dateFr, nombre, pct, vide } from "../format.js";
+import { dessiner, styler } from "../graphiques.js";
 import * as ui from "../ui.js";
 
 const TITRE = { ventes: "Prévision des ventes", churn: "Churn client", demande: "Demande par produit", retard: "Retard de livraison" };
@@ -25,6 +26,11 @@ const estAlerte = (statut) => {
 const estErreur = (mesure) => ERREUR.some((m) => String(mesure).toUpperCase().includes(m));
 const formatMesure = (mesure, valeur) => (vide(valeur) ? "—" : estErreur(mesure) ? pct(valeur) : nombre(valeur, 3));
 const titre = (cle, cas) => TITRE[cle] || cas;
+const COULEURS = { ventes: ui.CANARD, churn: ui.ROUGE, demande: ui.ORANGE, retard: ui.FONCE };
+const SERIES_TR = [ui.CANARD, ui.BLEU, ui.ROUGE, ui.ORANGE, ui.GRIS];          // transporteurs, ordre alphabétique
+const MOIS_COURTS = ["janv.", "févr.", "mars", "avr.", "mai", "juin", "juil.", "août", "sept.", "oct.", "nov.", "déc."];
+const moisCourt = (p) => `${MOIS_COURTS[Number(String(p).slice(5, 7)) - 1]} ${String(p).slice(0, 4)}`;   // '2025-01' -> 'janv. 2025'
+const s = (n) => (n > 1 ? "s" : "");
 
 async function afficher(zone) {
   const D = await donneesModeles();
@@ -91,7 +97,7 @@ async function afficher(zone) {
       ["Statut", ""]], t.slice(0, 12).map((r) => [ui.e(titre(r.cle, r.cas)), ui.e(r.objet), ui.e(r.indicateur), ui.e(r.periode),
       nombre(r.valeur, 3), nombre(r.seuil, 3), ui.badge(ui.e(r.statut), r.alerte ? "orange" : "vert")]))
       + ui.legende(`${suivi.length} indicateurs suivis` + (suivi.length > 12 ? " · 12 premiers, alertes d'abord" : "")
-        + ". Le suivi ne garde que la dernière exécution : pas encore de courbe dans le temps.");
+        + ". Évolution dans le temps : ci-dessous.");
   }
   let d = ui.titreCarte("Variables les plus importantes · churn", "ana.ml03_importance");
   d += !D.importance.length ? ui.legende("Importance non publiée.")
@@ -99,7 +105,41 @@ async function afficher(zone) {
       + ui.legende("Perte d'AUC quand on mélange la variable (permutation, test 2025). La récence explique l'essentiel du modèle.");
   h.push(ui.colonnes([ui.carte(g), ui.carte(d)], [1.5, 1], { ecart: "medium" }));
 
-  // 4. Registre
+  // 4. Suivi dans le temps : alertes à chaque exécution | retard mois par mois
+  const hist = D.historique || [];
+  let h1 = ui.titreCarte("Alertes à chaque exécution", "pbi.v_ml_suivi_historique");
+  const dates = [...new Set(hist.map((r) => r.date_donnees))].sort();
+  const parCle = {};                                      // parCle[date][cle] = {indicateurs, alertes}
+  for (const r of hist) {
+    const k = cleCas(r.cas);
+    parCle[r.date_donnees] ??= {};
+    const c = (parCle[r.date_donnees][k] ??= { indicateurs: 0, alertes: 0 });
+    c.indicateurs += r.indicateurs; c.alertes += r.alertes;
+  }
+  if (!dates.length) h1 += ui.legende("Historique non publié : il commence avec la version 1.5 de l'étape 7.");
+  else {
+    const dernier = Object.values(parCle[dates.at(-1)]);
+    let texte = `Dernière exécution (données au ${dateFr(dates.at(-1))}) : `
+      + `${nombre(dernier.reduce((a, c) => a + c.alertes, 0))} alertes sur ${nombre(dernier.reduce((a, c) => a + c.indicateurs, 0))} indicateurs.`;
+    texte += dates.length === 1
+      ? " Une seule exécution pour l'instant : un point par modèle. La courbe se remplit à chaque exécution de la chaîne sur des données plus récentes."
+      : ` ${dates.length} exécutions depuis les données au ${dateFr(dates[0])}.`;
+    h1 += ui.graphique("g-historique", 260) + ui.legende(texte);
+  }
+  const production = suivi.filter((r) => r.cas === "retard_production");
+  const rejeu = production.length ? production : suivi.filter((r) => r.cas === "retard");
+  let h2 = ui.titreCarte("Retard de livraison : écart prévu − réel, mois par mois", "pbi.v_ml_suivi");
+  if (!rejeu.length) h2 += ui.legende("Suivi mensuel du retard non publié.");
+  else {
+    const n = rejeu.filter((r) => r.alerte).length;
+    const modele = production.length ? "Modèle de production, réappris chaque mois sur 12 mois" : "Modèle évalué, appris sur 2023-2024";
+    h2 += ui.graphique("g-rejeu", 260) + ui.legende(`${modele} · ${nombre(n)} alerte${s(n)} sur ${nombre(rejeu.length)} `
+      + `(transporteur × mois) · pointillés : seuils de ±${nombre(rejeu[0].seuil * 100)} points. Sous zéro, le modèle sous-estime le retard.`);
+  }
+  h.push(ui.section("Suivi dans le temps"));
+  h.push(ui.colonnes([ui.carte(h1), ui.carte(h2)], [1, 1], { ecart: "medium" }));
+
+  // 5. Registre
   let c = ui.titreCarte("Registre des versions", "pbi.v_ml_registre");
   if (!registre.length) c += ui.legende("Registre non publié.");
   else {
@@ -117,6 +157,29 @@ async function afficher(zone) {
   }
   h.push(ui.carte(c));
   zone.innerHTML = h.join("");
+
+  // Graphiques du suivi dans le temps
+  if (dates.length) {
+    dessiner("g-historique", Object.keys(TITRE).map((k) => ({
+      type: "scatter", mode: "lines+markers", name: TITRE[k], x: dates.map(dateFr),
+      y: dates.map((d) => parCle[d][k]?.alertes ?? 0), marker: { size: 9 }, line: { color: COULEURS[k], width: 2 },
+      hovertemplate: "%{y} alertes<extra></extra>",
+    })), styler({ yaxis: { rangemode: "tozero", tickformat: "d" }, xaxis: { type: "category" } }, 260));
+  }
+  if (rejeu.length) {
+    const periodes = [...new Set(rejeu.map((r) => r.periode))].sort();
+    const transporteurs = [...new Set(rejeu.map((r) => r.objet))].sort();
+    const seuil = rejeu[0].seuil;
+    dessiner("g-rejeu", transporteurs.map((tr, i) => ({
+      type: "scatter", mode: "lines+markers", name: tr, x: periodes.map(moisCourt),
+      y: periodes.map((p) => rejeu.find((r) => r.objet === tr && r.periode === p)?.valeur ?? null),
+      line: { color: SERIES_TR[i % SERIES_TR.length], width: 2 }, hovertemplate: "%{y:.1%}<extra></extra>",
+    })), styler({
+      yaxis: { tickformat: ".0%" }, xaxis: { tickangle: 0, dtick: 2, type: "category" },
+      shapes: [-seuil, seuil].map((y) => ({ type: "line", xref: "paper", x0: 0, x1: 1, y0: y, y1: y,
+        line: { color: ui.ROUGE, width: 1, dash: "dash" } })),
+    }, 260));
+  }
 }
 
 demarrer("modeles", afficher);
