@@ -26,6 +26,17 @@ const estAlerte = (statut) => {
 const estErreur = (mesure) => ERREUR.some((m) => String(mesure).toUpperCase().includes(m));
 const formatMesure = (mesure, valeur) => (vide(valeur) ? "—" : estErreur(mesure) ? pct(valeur) : nombre(valeur, 3));
 const titre = (cle, cas) => TITRE[cle] || cas;
+// Ce qui tourne chaque nuit (registre, v1.5) : version, données d'apprentissage, seuil d'alerte.
+// La mesure 2025 de la carte reste celle du modèle évalué ; le modèle de production peut être réappris
+// sur une autre fenêtre (retard : 12 derniers mois) avec un autre seuil.
+const ligneProduction = (ver) => {
+  if (!ver) return "";
+  const m = [];
+  if (!vide(ver.version)) m.push(ui.e(ver.version));
+  if (!vide(ver.periode_apprentissage)) m.push(ui.e(String(ver.periode_apprentissage).replace(/(\d{4})-(\d{2})-(\d{2})/g, "$3/$2/$1")));
+  if (!vide(ver.seuil)) m.push(`seuil d'alerte ${nombre(ver.seuil, 2)}`);
+  return m.length ? `En production : ${m.join(" · ")}` : "";
+};
 const COULEURS = { ventes: ui.CANARD, churn: ui.ROUGE, demande: ui.ORANGE, retard: ui.FONCE };
 const SERIES_TR = [ui.CANARD, ui.BLEU, ui.ROUGE, ui.ORANGE, ui.GRIS];          // transporteurs, ordre alphabétique
 const MOIS_COURTS = ["janv.", "févr.", "mars", "avr.", "mai", "juin", "juil.", "août", "sept.", "oct.", "nov.", "déc."];
@@ -55,7 +66,7 @@ async function afficher(zone) {
     const r = retenus.find((x) => x.cle === k);
     const etat = alerteCas(k) ? ui.badge("À surveiller", "orange") : ui.badge("Actif", "vert");
     const ver = registre.find((x) => cleCas(x.cas) === k);
-    const version = ver && !vide(ver.version) ? ` · ${ui.e(ver.version)}` : "";
+    const production = ligneProduction(ver);
     // Gain face à la référence : positif = le modèle fait mieux (moins d'erreur, ou AUC plus haute)
     const erreur = estErreur(r.mesure);
     let gain = r.gain_vs_reference;
@@ -73,10 +84,11 @@ async function afficher(zone) {
     }
     return `<div class="ts-kpi"><div style="display:flex;justify-content:space-between;align-items:center">`
       + `<b style="font-size:1.05rem">${ui.e(titre(k, r.cas))}</b>${etat}</div>`
-      + `<div class="ts-kpi-note">${ui.e(r.modele)}${version}</div>`
+      + `<div class="ts-kpi-note">Modèle évalué : ${ui.e(r.modele)}</div>`
       + `<div class="ts-kpi-label" style="margin-top:.5rem">${ui.e(r.mesure)} 2025</div>`
       + `<div class="ts-kpi-valeur">${formatMesure(r.mesure, r.valeur_test)}</div>`
       + `<span class="ts-kpi-delta">${txtGain}</span>`
+      + (production ? `<div class="ts-kpi-note" style="margin-top:.4rem">${production}</div>` : "")
       + `<div class="ts-kpi-note" style="margin-top:.4rem;color:${ui.FONCE}">Alimente : ${ALIMENTE[k] || "—"}</div></div>`;
   });
   h.push(ui.rangeeKpi(cartes, Math.max(cartes.length, 1)));

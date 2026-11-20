@@ -7,7 +7,7 @@
  */
 import { deltaHtml as deltaFormat, echapper, sens as sensFormat } from "./format.js";
 
-export const VERSION = "v1.1.0";               // version de la version HTML (Streamlit : v0.14.0)
+export const VERSION = "v1.1.1";               // version de la version HTML (Streamlit : v0.14.1)
 
 // Palette (mêmes valeurs que les jetons de tunishop-theme.css, pour les graphiques et les couleurs calculées)
 export const FONCE = "#0F4C5C", CANARD = "#1B7F8C", CLAIR = "#9CC3C9";
