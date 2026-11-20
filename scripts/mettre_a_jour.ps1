@@ -54,6 +54,12 @@ function Verifier([int]$code, [string]$quoi) {
     if ($code -ne 0) { Arreter "$quoi a échoué (code $code)." }
 }
 
+function Stop-Serveur($processus) {
+    # Le python.exe d'un .venv Windows lance un second python : on arrête toute l'arborescence
+    if ($PSVersionTable.PSEdition -eq "Desktop" -or $IsWindows) { & taskkill.exe /PID $processus.Id /T /F 2>&1 | Out-Null }
+    Stop-Process -Id $processus.Id -Force -ErrorAction SilentlyContinue
+}
+
 # --- Contrôles préalables ----------------------------------------------------------------------
 Etape "0/5" "Contrôles"
 if (-not (Test-Path (Join-Path $Web "scripts\exporter_web.py"))) { Arreter "lance le script depuis le dossier de la version HTML." }
@@ -99,21 +105,32 @@ Verifier $code "L'export JSON"
 # --- 4. Test de fumée du site, en local -------------------------------------------------------
 Etape "4/5" "Test de fumée du site (local)"
 $port = 8611
-$options = @{ FilePath = $Py; ArgumentList = @("scripts\serveur_local.py", "$port"); WorkingDirectory = $Web; PassThru = $true }
+$journal = Join-Path ([System.IO.Path]::GetTempPath()) "tunishop_serveur_local.log"
+$options = @{ FilePath = $Py; ArgumentList = @("scripts\serveur_local.py", "$port"); WorkingDirectory = $Web
+              PassThru = $true; RedirectStandardOutput = $journal; RedirectStandardError = "$journal.err" }
 if ($PSVersionTable.PSEdition -eq "Desktop" -or $IsWindows) { $options.WindowStyle = "Hidden" }
 $serveur = Start-Process @options
 if (-not $serveur) { Arreter "le serveur local n'a pas démarré." }
+
+# On attend que le port réponde (connexion directe à 127.0.0.1, sans proxy), jusqu'à 20 s
 $pret = $false
-for ($i = 0; $i -lt 20 -and -not $pret; $i++) {          # jusqu'à 10 s pour que le serveur réponde
+for ($i = 0; $i -lt 40 -and -not $pret; $i++) {
     Start-Sleep -Milliseconds 500
-    try { Invoke-WebRequest -UseBasicParsing -TimeoutSec 2 "http://localhost:$port/index.html" | Out-Null; $pret = $true } catch { }
+    if ($serveur.HasExited) { break }                       # le serveur s'est arrêté tout de suite
+    $client = New-Object System.Net.Sockets.TcpClient
+    try { $client.Connect("127.0.0.1", $port); $pret = $true } catch { } finally { $client.Close() }
 }
-if (-not $pret) { Stop-Process -Id $serveur.Id -Force -ErrorAction SilentlyContinue; Arreter "le serveur local ne répond pas sur le port $port." }
+if (-not $pret) {
+    Stop-Serveur $serveur
+    Write-Host "  Messages du serveur :" -ForegroundColor Yellow
+    foreach ($f in @($journal, "$journal.err")) { if (Test-Path $f) { Get-Content $f | ForEach-Object { Write-Host "    $_" } } }
+    Arreter "le serveur local ne répond pas sur le port $port (messages ci-dessus)."
+}
 Push-Location $Web
-& $Py tests\test_fumee_web.py "http://localhost:$port/"
+& $Py tests\test_fumee_web.py "http://127.0.0.1:$port/"
 $code = $LASTEXITCODE
 Pop-Location
-Stop-Process -Id $serveur.Id -Force -ErrorAction SilentlyContinue
+Stop-Serveur $serveur
 Verifier $code "Le test de fumée du site"
 
 # --- 5. Envoi sur GitHub ----------------------------------------------------------------------
